@@ -18,11 +18,11 @@ bins = 350
 radius = 350
 
 # create matrix to store result
-smoothed_percentage = matrix(0, dim(coverage)[1], dim(coverage)[2])
-num_rows = dim(smoothed_percentage)[1]
+smoothed_percentage = matrix(0, nrow(coverage), ncol(coverage))
+num_rows = nrow(smoothed_percentage)
 
 # smoothing
-for (i in 1:dim(coverage)[2]) {
+for (i in 1:ncol(coverage)) {
     c_cum = cumsum(coverage[,i])
     m_cum = cumsum(methylation[,i])
 
