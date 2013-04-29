@@ -1,27 +1,52 @@
-%{
-qt_cov=quantile(coverage,0.98,1);
 
-for c=1:size(coverage,2)   
-    tmp=coverage(:,c);
-    tmp(tmp>qt_cov(c))=qt_cov(c);
-    coverage(:,c)=tmp;    
+
+
+clear all;
+load('data1')
+sigma_d=max(cpg0x2Dsites1(:))/100;%domain sigma
+sampling_d=sigma_d;
+
+derived_sigma=sigma_d/sampling_d;
+
+xi=round(cpg0x2Dsites1/sampling_d)+1;
+max_x=max(xi);
+numerator=zeros(1,max_x);
+denominator=zeros(1,max(xi));
+
+
+kernel_width=2*derived_sigma+1;
+
+halfKernelWidth = floor( kernel_width / 2 );
+kernel=[0 : kernel_width - 1];
+kernel=kernel-halfKernelWidth;
+kernel = (kernel.^2) / ( derived_sigma * derived_sigma ) ;
+kernel = exp( -0.5 * kernel );%gaussian
+
+for i=1:max_x
+    %i
+    mask=(xi==i);
+    for col=1:size(methylation1,2)
+        
+        numerator(i,col)=sum(methylation1(mask,col));
+        denominator(i,col)=sum(coverage1(mask,col));
+        
+    end
+    
+    
 end
-%}
-bins=9;
+for col=1:size(methylation1,2)
 
-radius=350;
+    numerator(:,col)=conv(numerator(:,col),kernel,'same');
+    denominator(:,col)=conv(denominator(:,col),kernel,'same');
+    mask=(denominator(:,col)==0);
+    numerator(mask,col)=0;
+    denominator(mask)=1;
+   
+    smoothed_signal(:,col)=numerator(:,col)./denominator(:,col); 
+    yi(:,col) = interp1([1:max_x],smoothed_signal(:,col),(cpg0x2Dsites1/sampling_d)+1);%%interpolation
 
-smoothed_percentage=zeros(size(coverage));
-
-for c=1:size(coverage,2)   
-
-    c_cum=cumsum(coverage(:,c),1);
-    m_cum=cumsum(methylation(:,c),1);
-    smoothed_percentage(1:radius,c)=m_cum(1+radius:2*radius)./c_cum(1+radius:2*radius);
-    smoothed_percentage(end-radius+1:end,c)=(repmat(m_cum(end),[radius,1])-m_cum(end-2*radius+1:end-radius))./(repmat(c_cum(end),[radius,1])-c_cum(end-2*radius+1:end-radius));
-    smoothed_percentage(radius+1:end-radius,c)=(m_cum(1+2*radius:end)-m_cum(1:end-2*radius))./(c_cum(1+2*radius:end)-c_cum(1:end-2*radius));
 end
-
-
-
-
+%%coarse scale
+figure;plot(smoothed_signal)
+%%interpolated result
+figure;plot(yi)
