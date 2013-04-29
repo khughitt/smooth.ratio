@@ -1,40 +1,64 @@
 #!/usr/bin/env Rscript
-#################################################
+################################################################################
 # Box Smooth Test
 # Keith Hughitt <khughitt@umd.edu>
-# 2013/04/19
+# Chengxi Ye <cxy@cs.umd.edu>
+# 2013/04/28
 #
-# This file is a translation of test.m written by
-# Chengxi ye.
-#################################################
+# This file is a translation of Matlab code originally written by Chengxi Ye.
+#
+################################################################################
 library(R.matlab)
+library(signal)
 
 # load data
 data = readMat('test.mat')
 attach(data)
 
-# smoothing parameters
-bins = 350
-radius = 350
+# Domain sigma
+sigma_d = max(cpg0x2Dsites1) / 100
+sampling_d = sigma_d
 
-# create matrix to store result
-smoothed_percentage = matrix(0, nrow(coverage), ncol(coverage))
-num_rows = nrow(smoothed_percentage)
+derived_sigma = sigma_d / sampling_d
 
-# smoothing
-for (i in 1:ncol(coverage)) {
-    c_cum = cumsum(coverage[,i])
-    m_cum = cumsum(methylation[,i])
+xi = round(cpg0x2Dsites1 / sampling_d) + 1
+max_x = max(xi)
+numerator = matrix(0, 1, max_x)
+denominator = matrix(0, 1, max(xi))
 
-    smoothed_percentage[1:radius,i] = m_cum[(1+radius):(2*radius)] / 
-                                      c_cum[(1+radius):(2*radius)]
+# Kernel
+kernel_width = 2 * derived_sigma + 1
 
-    smoothed_percentage[(num_rows - radius + 1):num_rows, i] = (matrix(rep(m_cum[num_rows], radius)) - m_cum[(num_rows-2*radius+1):(num_rows-radius)]) / 
-                                                               (matrix(rep(m_cum[num_rows], radius)) - c_cum[(num_rows-2*radius+1):(num_rows-radius)])
+halfKernelWidth = floor( kernel_width / 2 )
+kernel = 0:(kernel_width - 1)
+kernel = kernel - halfKernelWidth;
+kernel = kernel^2 / (derived_sigma * derived_sigma )
 
-    smoothed_percentage[(radius+1):(num_rows-radius),i] = (m_cum[(1+2*radius):num_rows] - m_cum[1:(num_rows-2*radius)]) /
-                                                          (c_cum[(1+2*radius):num_rows] - c_cum[1:(num_rows-2*radius)])
+kernel = exp( -0.5 * kernel ) # gaussian
+
+#############################################################
+# NOT FINISHED PORTING -- Code below is incomplete...
+# Keith 2013/04/29
+#############################################################
+for (i in 1:max_x) {
+    mask = (xi == i)
+    numerator[i] = apply(methylation1[mask,], 2, sum)
+    denominator[i] = apply(coverage1[mask,], 2, sum)
 }
 
+# convolve kernel
+numerator = conv(numerator, kernel)
+denominator = conv(denominator, kernel)
+numerator[denominator == 0] = 0
+denominator[denominator == 0] = 1
 
+smoothed_signal = numerator / denominator
 
+# interpolate and plot
+yi = interp1(1:max_x, smoothed_signal, (cpg0x2Dsites1 / sampling_d) +1)
+
+# coarse scale
+plot(smoothed_signal)
+
+# interpolated result
+plot(yi)
