@@ -10,8 +10,8 @@ derived_sigma=sigma_d/sampling_d;
 
 xi=round(cpg0x2Dsites1/sampling_d)+1;
 max_x=max(xi);
-numerator=zeros(1,max_x);
-denominator=zeros(1,max(xi));
+numerator=zeros(max_x,size(methylation1,2));
+denominator=zeros(max_x,size(methylation1,2));
 
 
 kernel_width=2*derived_sigma+1;
