@@ -10,6 +10,7 @@
 ################################################################################
 library(R.matlab)
 library(signal)
+library(ggplot2)
 
 # load data
 data = readMat('test.mat')
@@ -74,8 +75,10 @@ for (col in 1:ncol(methylation1)) {
 }
 
 # plot coarse scale
-plot(smoothed_signal)
+dat = stack(as.data.frame(smoothed_signal))
+dat$x <- rep(seq_len(nrow(smoothed_signal)), ncol(smoothed_signal))
+ggplot(dat, aes(x, values)) + geom_line(aes(colour=ind))
 
 # plot interpolated result
-plot(yi)
+# plot(yi)
 

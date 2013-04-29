@@ -49,4 +49,4 @@ end
 figure;plot(smoothed_signal)
 
 %%interpolated result
-figure;plot(yi)
+%%figure;plot(yi)
