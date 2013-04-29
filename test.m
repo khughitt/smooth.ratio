@@ -36,7 +36,7 @@ for col=1:size(methylation1,2)
     denominator(:,col)=conv(denominator(:,col),kernel,'same');
     mask=(denominator(:,col)==0);
     numerator(mask,col)=0;
-    denominator(mask)=1;
+    denominator(mask,col)=1;
    
     smoothed_signal(:,col)=numerator(:,col)./denominator(:,col);
     
