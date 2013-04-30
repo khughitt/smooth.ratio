@@ -63,6 +63,13 @@ for (col in 1:ncol(methylation1)) {
     numerator[,col]   = conv_same(numerator[,col], kernel)
     denominator[,col] = conv_same(denominator[,col], kernel)
     
+    # Work-around 2013/04/29
+    # conv currently has a bug relating to precision when convolving over a
+    # range of zeros. As a temporary work-around, any values very close to 0
+    # will be set to 0.
+    numerator[,col][numerator[,col] <= 1E-10] = 0
+    denominator[,col][denominator[,col] <= 1E-10] = 0
+        
     mask = (denominator[,col] == 0)
     
     numerator[mask,col]   = 0
