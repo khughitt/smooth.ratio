@@ -1,44 +1,58 @@
 #' Fast smoothing functions for R
-#'
+#' 
 #' This file contains smoothing methods for R.
+#' 
+#' @author Keith Hughitt, based on a Matlab version written by Chengxi Ye.
 library(signal)
 library(ggplot2)
 
-#'
-#' Approximate trilateral smoothing
+#' Approximate bilateral smoothing
 #' 
+#' @param spatial    mx1 Spatial component of matrix to be smoothed
+#' @param intensity  mxn Intensity component of matrix to be smoothed
+#' @param confidence mxn Confidence measure for vector to be smooted
+#' @return list containing smoothed matrix along with intermediate downsampled
+#'         version of the matrix.
 fast.smooth = function(spatial, intensity, confidence) {
-    # Domain sigma
-    sigma_d    = (max(spatial) - min(spatial)) / 100
-    sampling_d = sigma_d
+    # Gaussian kernel parameters
+    sigma_d = (max(spatial) - min(spatial)) / 100
+    
+    # Down-sampling parameters
+    sampling_d    = sigma_d
     derived_sigma = sigma_d / sampling_d
-
+    
+    # Bin data for down-sampling
     xi    = round((spatial - min(spatial)) / sampling_d) + 1
     max_x = max(xi)
-    numerator   = matrix(0, max_x, ncol(intensity))
-    denominator = matrix(0, max_x, ncol(intensity))
 
-    # Kernel
+    # Generate kernel (Gaussian approximation)
     kernel_width = 2 * derived_sigma + 1
 
     kernel = 0:(kernel_width - 1)
     kernel = kernel - floor(kernel_width / 2)
     kernel = kernel^2 / (derived_sigma * derived_sigma)
-    kernel = exp( -0.5 * kernel ) # gaussian
+    kernel = exp(-0.5 * kernel)
 
+    # Down-sample data
+    numerator   = matrix(0, max_x, ncol(intensity))
+    denominator = matrix(0, max_x, ncol(confidence))
+    
     for (i in 1:max_x) {
         mask = (xi == i)
         numerator[i,]   = apply(intensity[mask,], 2, sum)
         denominator[i,] = apply(confidence[mask,], 2, sum)
     }
 
-
-
-    # Convolve kernel
-    yi              = matrix(0, nrow(intensity), ncol(intensity))
+    # Instantiate matrices to hold smooth down-sampled and interpolated values
+    # smoothed_signal will contain the smooth down-sampled matrix while yi
+    # will be used to store the final version which has been interpolated back
+    # up to its original size.
     smoothed_signal = matrix(0, max_x, ncol(intensity))
+    yi = matrix(0, nrow(intensity), ncol(intensity))
 
+    # Iterate through samples and convolve down-sampled data
     for (col in 1:ncol(intensity)) {
+        # Perform convolution
         numerator[,col]   = conv_same(numerator[,col], kernel)
         denominator[,col] = conv_same(denominator[,col], kernel)
         
@@ -54,8 +68,10 @@ fast.smooth = function(spatial, intensity, confidence) {
         numerator[mask,col]   = 0
         denominator[mask,col] = 1
         
+        # Scale the smoothed result by the smoothed confidence vector
         smoothed_signal[,col] = numerator[,col] / denominator[,col]
 
+        # interpolate back up to the original vector length
         yi[,col] = interp1(1:max_x, smoothed_signal[,col], 
                            (spatial / sampling_d) +1)
     }
@@ -68,11 +84,14 @@ fast.smooth = function(spatial, intensity, confidence) {
 #' Performs a convolution and returns the the center part that is the same size
 #' as the original input. This is similar to using the 'same' option for the
 #' conv function in Octave.
-#'
+#' 
+#' @param a First numeric sequence to be convolved
+#' @param b Second numeric sequence to be convolved
+#' @return Vector resulting from convolution of a and b of the same length
+#'         as input vectors.
 #' @seealso: \url{http://www.inside-r.org/packages/cran/signal/docs/conv}
 conv_same = function(a, b) {
     x = conv(a, b)
     offset = (length(x) - length(a)) / 2
     return(x[(1 + ceiling(offset)):(length(x) - floor(offset))])
 }
-
