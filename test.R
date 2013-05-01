@@ -17,11 +17,11 @@ data = readMat('test.mat')
 attach(data)
 
 # Domain sigma
-sigma_d    = max(cpg0x2Dsites1) / 100
+sigma_d    = (max(cpg0x2Dsites1) - min(cpg0x2Dsites1)) / 100
 sampling_d = sigma_d
 derived_sigma = sigma_d / sampling_d
 
-xi    = round(cpg0x2Dsites1 / sampling_d) + 1
+xi    = round((cpg0x2Dsites1 - min(cpg0x2Dsites1)) / sampling_d) + 1
 max_x = max(xi)
 numerator   = matrix(0, max_x, ncol(methylation1))
 denominator = matrix(0, max_x, ncol(methylation1))
