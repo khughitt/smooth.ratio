@@ -11,14 +11,15 @@ library(ggplot2)
 #' @param spatial    mx1 Spatial component of matrix to be smoothed
 #' @param intensity  mxn Intensity component of matrix to be smoothed
 #' @param confidence mxn Confidence measure for vector to be smooted
+#' @param sigma_d    Standard deviation for Gaussian kernel approximation
+#' @param sampling_d Factor to divide spatial range by to determine number
+#'                   of bins to use for down-sampling.
 #' @return list containing smoothed matrix along with intermediate downsampled
 #'         version of the matrix.
-fast.smooth = function(spatial, intensity, confidence) {
-    # Gaussian kernel parameters
-    sigma_d = (max(spatial) - min(spatial)) / 100
-    
-    # Down-sampling parameters
-    sampling_d    = sigma_d
+fast.smooth = function(spatial, intensity, confidence, 
+                       sigma_d=(max(spatial) - min(spatial)) / 100,
+                       sampling_d=sigma_d) {
+    # Down-sampling parameter
     derived_sigma = sigma_d / sampling_d
     
     # Bin data for down-sampling
