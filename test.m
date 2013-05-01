@@ -2,7 +2,7 @@
 % Chengxi Ye <cxy@cs.umd.edu>
 % 2013/04/29
 clear all;
-load('test')
+load('data/test')
 
 sigma_d=max(cpg0x2Dsites1(:))/100; %domain sigma
 sampling_d=sigma_d;
