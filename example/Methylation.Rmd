@@ -7,6 +7,26 @@ This example demonstrates the use of our smoothing approach for improving the
 signal-to-noise ratio for Whole Genome Bisulfite Sequencing (WGBS) methylation
 data.
 
+(...methylation background...)
+
+WGBS data is inherently noisy, and as such the signatures of interesting
+features such as CpG islands is often obscured by numerous low coverage
+reads.
+
+The data used for this analysis comes from a study by Hansen et al. (2011)^1,
+and consists of three components:
+
+1. **cpgsites** - Genomic location (offset) of CpG sites in the dataset.
+2. **methylation** - Number of methylation reads at a given CpG site.
+3. **coverage** - Total number of reads at a given site.
+
+The first variable (cpgsites) is a mx1 integer vector, while the later two
+variables are each mxn matrices, each with $n = 6$ separate biological samples.
+
+The smoothing method smooths the methylation values across time, weighting
+the contribution of each site by the ratio of the number of methylated reads
+to total reads at the site.
+
 Analysis
 --------
 First let's load sample data and take a look at what we have:
@@ -56,4 +76,8 @@ ggplot(dat, aes(x, values)) + geom_line(aes(colour=ind))
 ```
 
 Done!
+
+References
+----------
+- Kasper Daniel Hansen, Winston Timp, Héctor Corrada Bravo, Sarven Sabunciyan, Benjamin Langmead, Oliver G McDonald, Bo Wen, Hao Wu, Yun Liu, Dinh Diep, Eirikur Briem, Kun Zhang, Rafael A Irizarry, Andrew P Feinberg,   (2011) Increased Methylation Variation in Epigenetic Domains Across Cancer Types.  *Nature Genetics*  **43**  [10.1038/ng.865](http://dx.doi.org/10.1038/ng.865)
 
