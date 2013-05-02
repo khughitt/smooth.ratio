@@ -42,12 +42,14 @@ fast.smooth = function(spatial, intensity, confidence,
 
     # Down-sample data
     numerator   = matrix(0, max_x, ncol(intensity))
-    denominator = matrix(0, max_x, ncol(confidence))
+    denominator = matrix(1, max_x, ncol(confidence))
     
     for (i in 1:max_x) {
         mask = (xi == i)
-        numerator[i,]   = apply(intensity[mask,], 2, sum)
-        denominator[i,] = apply(confidence[mask,], 2, sum)
+        
+        # cast to matrix in case single row returned
+        numerator[i,]   = apply(matrix(intensity[mask,]), 2, sum)
+        denominator[i,] = apply(matrix(confidence[mask,]), 2, sum)
     }
 
     # Instantiate matrices to hold smooth down-sampled and interpolated values
@@ -68,7 +70,7 @@ fast.smooth = function(spatial, intensity, confidence,
         # range of zeros. As a temporary work-around, any values very close to 0
         # will be set to 0.
         numerator[,col][numerator[,col] <= 1E-10] = 0
-        denominator[,col][denominator[,col] <= 1E-10] = 0
+        denominator[,col][denominator[,col] <= 1E-10] = 1
             
         mask = (denominator[,col] == 0)
         
