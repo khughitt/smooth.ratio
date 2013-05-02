@@ -19,6 +19,12 @@ library(ggplot2)
 fast.smooth = function(spatial, intensity, confidence, 
                        sigma_d=(max(spatial) - min(spatial)) / 100,
                        sampling_d=sigma_d) {
+
+    # Convert any dataframe input to matrices
+    spatial    = as.matrix(spatial)
+    intensity  = as.matrix(intensity)
+    confidence = as.matrix(confidence)
+    
     # Down-sampling parameter
     derived_sigma = sigma_d / sampling_d
     
