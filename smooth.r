@@ -48,7 +48,7 @@ fast.smooth = function(spatial, intensity, confidence,
     # coefficients to use in below calculation?
     for (i in 1:nrow(intensity)) {
         numerator[xi[i],]   = numerator[xi[i],] + intensity[i,]
-        denominator[xi[i],] = denominator[xi[i],] + coverage[i,]
+        denominator[xi[i],] = denominator[xi[i],] + confidence[i,]
     }
 
     # Instantiate matrices to hold smooth down-sampled and interpolated values
