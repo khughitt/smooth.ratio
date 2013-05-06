@@ -17,7 +17,7 @@ library(ggplot2)
 #' @return list containing smoothed matrix along with intermediate downsampled
 #'         version of the matrix.
 fast.smooth = function(spatial, intensity, confidence, 
-                       sigma_d=(max(spatial) - min(spatial)) / 100,
+                       sigma_d=(max(spatial) - min(spatial)) / 10000,
                        sampling_d=sigma_d) {
 
     # Convert any dataframe input to matrices
@@ -42,14 +42,13 @@ fast.smooth = function(spatial, intensity, confidence,
 
     # Down-sample data
     numerator   = matrix(0, max_x, ncol(intensity))
-    denominator = matrix(1, max_x, ncol(confidence))
+    denominator = matrix(0, max_x, ncol(confidence))
     
-    for (i in 1:max_x) {
-        mask = (xi == i)
-        
-        # cast to matrix in case single row returned
-        numerator[i,]   = apply(matrix(intensity[mask,]), 2, sum)
-        denominator[i,] = apply(matrix(confidence[mask,]), 2, sum)
+    # @TODO: Would it be possible to collapse repeats in xi to pairs of 
+    # coefficients to use in below calculation?
+    for (i in 1:nrow(intensity)) {
+        numerator[xi[r],]   = numerator[xi[r],] + intensity[r,]
+        denominator[xi[r],] = denominator[xi[r],] + coverage[r,]
     }
 
     # Instantiate matrices to hold smooth down-sampled and interpolated values
@@ -72,7 +71,7 @@ fast.smooth = function(spatial, intensity, confidence,
         numerator[,col][numerator[,col] <= 1E-10] = 0
         denominator[,col][denominator[,col] <= 1E-10] = 1
             
-        mask = (denominator[,col] == 0)
+        mask = which(denominator[,col] == 0)
         
         numerator[mask,col]   = 0
         denominator[mask,col] = 1
