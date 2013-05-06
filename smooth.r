@@ -47,8 +47,8 @@ fast.smooth = function(spatial, intensity, confidence,
     # @TODO: Would it be possible to collapse repeats in xi to pairs of 
     # coefficients to use in below calculation?
     for (i in 1:nrow(intensity)) {
-        numerator[xi[r],]   = numerator[xi[r],] + intensity[r,]
-        denominator[xi[r],] = denominator[xi[r],] + coverage[r,]
+        numerator[xi[i],]   = numerator[xi[i],] + intensity[i,]
+        denominator[xi[i],] = denominator[xi[i],] + coverage[i,]
     }
 
     # Instantiate matrices to hold smooth down-sampled and interpolated values

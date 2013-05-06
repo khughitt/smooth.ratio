@@ -7,6 +7,26 @@ This example demonstrates the use of our smoothing approach for improving the
 signal-to-noise ratio for Whole Genome Bisulfite Sequencing (WGBS) methylation
 data.
 
+(...methylation background...)
+
+WGBS data is inherently noisy, and as such the signatures of interesting
+features such as CpG islands is often obscured by numerous low coverage
+reads.
+
+The data used for this analysis comes from a study by Hansen et al. (2011)^1,
+and consists of three components:
+
+1. **cpgsites** - Genomic location (offset) of CpG sites in the dataset.
+2. **methylation** - Number of methylation reads at a given CpG site.
+3. **coverage** - Total number of reads at a given site.
+
+The first variable (cpgsites) is a mx1 integer vector, while the later two
+variables are each mxn matrices, each with $n = 6$ separate biological samples.
+
+The smoothing method smooths the methylation values across time, weighting
+the contribution of each site by the ratio of the number of methylated reads
+to total reads at the site.
+
 Analysis
 --------
 First let's load sample data and take a look at what we have:
@@ -123,12 +143,12 @@ head(result$small)
 
 ```
 ##        [,1]   [,2]   [,3]   [,4]   [,5]   [,6]
-## [1,] 0.5964 0.5993 0.6385 0.5500 0.5796 0.5096
-## [2,] 0.6630 0.6370 0.6821 0.5619 0.6482 0.5182
-## [3,] 0.7008 0.6551 0.7071 0.5762 0.6875 0.5353
-## [4,] 0.7008 0.6614 0.7082 0.6112 0.6889 0.5827
-## [5,] 0.6925 0.6701 0.7006 0.6411 0.6835 0.6207
-## [6,] 0.7033 0.6805 0.7096 0.6322 0.6918 0.6103
+## [1,] 0.8392 0.9307 0.9100 0.8713 0.9151 0.9475
+## [2,] 0.8169 0.8850 0.8532 0.7859 0.9072 0.8614
+## [3,] 0.7191 0.5577 0.6368 0.3119 0.8736 0.4913
+## [4,] 0.6491 0.5264 0.6013 0.3846 0.8520 0.5455
+## [5,] 0.2500 0.0000 0.7000 0.3333 0.4286 0.5000
+## [6,] 1.0000 0.0000 1.0000 0.3333 0.5000 0.5000
 ```
 
 ```r
@@ -139,12 +159,12 @@ head(result$y)
 
 ```
 ##        [,1]   [,2]   [,3]   [,4]   [,5]   [,6]
-## [1,] 0.5967 0.5994 0.6387 0.5501 0.5799 0.5096
-## [2,] 0.5967 0.5994 0.6387 0.5501 0.5799 0.5096
-## [3,] 0.5967 0.5994 0.6387 0.5501 0.5799 0.5096
-## [4,] 0.5967 0.5994 0.6387 0.5501 0.5799 0.5096
-## [5,] 0.5967 0.5994 0.6387 0.5501 0.5799 0.5096
-## [6,] 0.5968 0.5995 0.6387 0.5501 0.5800 0.5097
+## [1,] 0.8299 0.9115 0.8862 0.8354 0.9118 0.9113
+## [2,] 0.8299 0.9115 0.8862 0.8354 0.9118 0.9113
+## [3,] 0.8299 0.9115 0.8861 0.8354 0.9118 0.9113
+## [4,] 0.8299 0.9115 0.8861 0.8354 0.9118 0.9113
+## [5,] 0.8298 0.9115 0.8861 0.8353 0.9118 0.9113
+## [6,] 0.8275 0.9067 0.8802 0.8265 0.9109 0.9023
 ```
 
 
@@ -179,4 +199,8 @@ ggplot(dat, aes(x, values)) + geom_line(aes(colour = ind))
 
 
 Done!
+
+References
+----------
+- Kasper Daniel Hansen, Winston Timp, Héctor Corrada Bravo, Sarven Sabunciyan, Benjamin Langmead, Oliver G McDonald, Bo Wen, Hao Wu, Yun Liu, Dinh Diep, Eirikur Briem, Kun Zhang, Rafael A Irizarry, Andrew P Feinberg,   (2011) Increased Methylation Variation in Epigenetic Domains Across Cancer Types.  *Nature Genetics*  **43**  [10.1038/ng.865](http://dx.doi.org/10.1038/ng.865)
 
