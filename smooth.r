@@ -51,6 +51,17 @@ fast.smooth = function(spatial, intensity, confidence,
         denominator[xi[i],] = denominator[xi[i],] + coverage[i,]
     }
 
+    #-----------------------------------------------------------------------------
+    fbins = function(xi, intensity, confidence) {    
+        numerator=aggregate(methylation,by=list(xi[[1]]),FUN="sum")
+        denominator=aggregate(coverage,by=list(xi[[1]]),FUN="sum")
+        list(numerator=numerator,denominator=denominator)    
+    }
+    test=fbins(xi, intensity, confidence)
+    numerator1=(test[1])[[1]]
+    denominator1=(test[2])[[1]]
+    #-----------------------------------------------------------------------------
+    
     # Instantiate matrices to hold smooth down-sampled and interpolated values
     # smoothed_signal will contain the smooth down-sampled matrix while yi
     # will be used to store the final version which has been interpolated back
