@@ -43,7 +43,7 @@ fast.smooth = function(spatial, intensity, confidence,
     # Down-sample data
     numerator   = matrix(0, max_x, ncol(intensity))
     denominator = matrix(0, max_x, ncol(confidence))
-    
+
     # @TODO: Would it be possible to collapse repeats in xi to pairs of 
     # coefficients to use in below calculation?
     for (i in 1:nrow(intensity)) {
@@ -51,17 +51,9 @@ fast.smooth = function(spatial, intensity, confidence,
         denominator[xi[i],] = denominator[xi[i],] + confidence[i,]
     }
 
-    #-----------------------------------------------------------------------------
-    fbins = function(xi, intensity, confidence) {    
-        numerator=aggregate(methylation,by=list(xi[[1]]),FUN="sum")
-        denominator=aggregate(coverage,by=list(xi[[1]]),FUN="sum")
-        list(numerator=numerator,denominator=denominator)    
-    }
-    test=fbins(xi, intensity, confidence)
-    numerator1=(test[1])[[1]]
-    denominator1=(test[2])[[1]]
-    #-----------------------------------------------------------------------------
-    
+    #numerator = aggregate(intensity, list(xi[[1]]), "sum")
+    #denominator = aggregate(confidence, list(xi[[1]]), "sum")
+
     # Instantiate matrices to hold smooth down-sampled and interpolated values
     # smoothed_signal will contain the smooth down-sampled matrix while yi
     # will be used to store the final version which has been interpolated back
@@ -74,14 +66,14 @@ fast.smooth = function(spatial, intensity, confidence,
         # Perform convolution
         numerator[,col]   = conv_same(numerator[,col], kernel)
         denominator[,col] = conv_same(denominator[,col], kernel)
-        
+
         # Work-around 2013/04/29
         # conv currently has a bug relating to precision when convolving over a
         # range of zeros. As a temporary work-around, any values very close to 0
         # will be set to 0.
         numerator[,col][numerator[,col] <= 1E-10] = 0
         denominator[,col][denominator[,col] <= 1E-10] = 1
-            
+
         mask = which(denominator[,col] == 0)
         
         numerator[mask,col]   = 0
