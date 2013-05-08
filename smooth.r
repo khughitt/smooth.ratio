@@ -17,9 +17,11 @@ library(ggplot2)
 #' @return list containing smoothed matrix along with intermediate downsampled
 #'         version of the matrix.
 fast.smooth = function(spatial, intensity, confidence, 
-                       sigma_d=(max(spatial) - min(spatial)) / 10000,
+                       sigma_d=(max(spatial) - min(spatial)) / 1000,
                        sampling_d=sigma_d) {
 
+    t0 = Sys.time()
+    
     # Convert any dataframe input to matrices
     spatial    = as.matrix(spatial)
     intensity  = as.matrix(intensity)
@@ -28,9 +30,15 @@ fast.smooth = function(spatial, intensity, confidence,
     # Down-sampling parameter
     derived_sigma = sigma_d / sampling_d
     
+    t1 = Sys.time()
+    print(sprintf("t1: %f", t1-t0))
+    
     # Bin data for down-sampling
     xi    = round((spatial - min(spatial)) / sampling_d) + 1
     max_x = max(xi)
+    
+    t2 = Sys.time()
+    print(sprintf("t2: %f", t2-t1))
 
     # Generate kernel (Gaussian approximation)
     kernel_width = 2 * derived_sigma + 1
@@ -43,13 +51,19 @@ fast.smooth = function(spatial, intensity, confidence,
     # Down-sample data
     numerator   = matrix(0, max_x, ncol(intensity))
     denominator = matrix(0, max_x, ncol(confidence))
+    
+    t3 = Sys.time()
+    print(sprintf("t3: %f", t3-t2))
 
     # @TODO: Would it be possible to collapse repeats in xi to pairs of 
     # coefficients to use in below calculation?
-    for (i in 1:nrow(intensity)) {
+    for (i in 1:nrow(xi)) {
         numerator[xi[i],]   = numerator[xi[i],] + intensity[i,]
         denominator[xi[i],] = denominator[xi[i],] + confidence[i,]
     }
+    
+    t4 = Sys.time()
+    print(sprintf("t4: %f", t4-t3))
 
     #numerator = aggregate(intensity, list(xi[[1]]), "sum")
     #denominator = aggregate(confidence, list(xi[[1]]), "sum")
@@ -84,10 +98,14 @@ fast.smooth = function(spatial, intensity, confidence,
 
         # interpolate back up to the original vector length
         yi[,col] = interp1(1:max_x, smoothed_signal[,col], 
-                           (spatial / sampling_d) +1)
+                           ((spatial - min(spatial)) / sampling_d) +1)
     }
+    
+    t5 = Sys.time()
+    print(sprintf("t5: %f", t5-t4))
 
-    return(list(y=yi, small=smoothed_signal))
+    #return(list(y=yi, small=smoothed_signal))
+    return(new("SmoothedData", spatial=spatial, intensity=intensity, confidence=confidence, smoothed=yi))
 }
 
 #' Centered convolution
@@ -106,3 +124,27 @@ conv_same = function(a, b) {
     offset = (length(x) - length(a)) / 2
     return(x[(1 + ceiling(offset)):(length(x) - floor(offset))])
 }
+
+#'
+#' SmoothedData class definition
+#'
+setClass('SmoothedData', representation(spatial='matrix', intensity='matrix', 
+                                        confidence='matrix', smoothed='matrix'))
+setMethod('plot', 'SmoothedData', function(object, x, y, col) {
+    #col=1
+    indices = which((object@spatial > 830000) & (object@spatial <= 850000))
+    
+    # create dataframes for ggplot
+    df1 = data.frame(x=object@spatial[indices], 
+                     y=object@intensity[indices,col] / object@confidence[indices,col])
+    
+    # first column
+    df2 = data.frame(x=object@spatial[indices], y=object@smoothed[indices,col])
+    
+    ggplot(df1, aes(x=x, y=y)) + geom_point(color="#5A5A5A") +
+        geom_line(data=df2, aes(x=x, y=y), color='red') +
+        xlab("CpG site (nt)") +
+        ylab("% Methylation") +
+        ggtitle("Smooted data fit")
+    #ggsave('output_sample1.png', width=12, height=9, dpi=96)
+})
