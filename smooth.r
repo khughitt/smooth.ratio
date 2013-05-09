@@ -121,23 +121,6 @@ conv_fast = function(a, b) {
     return(x1 + x2 + x3)
 }
 
-#' Centered convolution
-#'
-#' Performs a convolution and returns the the center part that is the same size
-#' as the original input. This is similar to using the 'same' option for the
-#' conv function in Octave.
-#' 
-#' @param a First numeric sequence to be convolved
-#' @param b Second numeric sequence to be convolved
-#' @return Vector resulting from convolution of a and b of the same length
-#'         as input vectors.
-#' @seealso: \url{http://www.inside-r.org/packages/cran/signal/docs/conv}
-conv_same = function(a, b) {
-    x = conv(a, b)
-    offset = (length(x) - length(a)) / 2
-    return(x[(1 + ceiling(offset)):(length(x) - floor(offset))])
-}
-
 #'
 #' SmoothedData class definition
 #'
