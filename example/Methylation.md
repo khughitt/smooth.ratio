@@ -132,39 +132,19 @@ range(cpgsites)
 ```
 
 
-Let's now apply our smoothing method and compare the results.
+Let's now smooth a 20kb region of the chromosome.
 
 ```r
-result = fast.smooth(cpgsites, methylation, coverage)
+indices = which((cpgsites > 830000) & (cpgsites < 850000))
+result = fast.smooth(cpgsites[indices], methylation[indices, ], coverage[indices, 
+    ], sigma_d = 250)
 
-# down-sampled data
-head(result$small)
+# smoothed curve
+head(result$smoothed)
 ```
 
 ```
-##        [,1]   [,2]   [,3]   [,4]   [,5]   [,6]
-## [1,] 0.8392 0.9307 0.9100 0.8713 0.9151 0.9475
-## [2,] 0.8169 0.8850 0.8532 0.7859 0.9072 0.8614
-## [3,] 0.7191 0.5577 0.6368 0.3119 0.8736 0.4913
-## [4,] 0.6491 0.5264 0.6013 0.3846 0.8520 0.5455
-## [5,] 0.2500 0.0000 0.7000 0.3333 0.4286 0.5000
-## [6,] 1.0000 0.0000 1.0000 0.3333 0.5000 0.5000
-```
-
-```r
-
-# after interpolation back up to it's full size
-head(result$y)
-```
-
-```
-##        [,1]   [,2]   [,3]   [,4]   [,5]   [,6]
-## [1,] 0.8299 0.9115 0.8862 0.8354 0.9118 0.9113
-## [2,] 0.8299 0.9115 0.8862 0.8354 0.9118 0.9113
-## [3,] 0.8299 0.9115 0.8861 0.8354 0.9118 0.9113
-## [4,] 0.8299 0.9115 0.8861 0.8354 0.9118 0.9113
-## [5,] 0.8298 0.9115 0.8861 0.8353 0.9118 0.9113
-## [6,] 0.8275 0.9067 0.8802 0.8265 0.9109 0.9023
+## Error: $ operator not defined for this S4 class
 ```
 
 
@@ -172,30 +152,18 @@ Finally, let's create some simple plots of our results.
 
 
 ```r
-library(ggplot2)
-
-# plot down-sampled data
-dat = stack(as.data.frame(result$small))
-scale_factor = (max(cpgsites) - min(cpgsites))/nrow(result$small)
-dat$x <- rep(seq_len(nrow(result$small)), ncol(result$small)) * scale_factor
-ggplot(dat, aes(x, values)) + geom_line(aes(colour = ind))
-```
-
-![plot of chunk visualization](figure/visualization1.png) 
-
-```r
-
-# full-size
-dat = stack(as.data.frame(result$y))
-dat$x <- rep(seq_len(nrow(result$y)), ncol(result$y))
-ggplot(dat, aes(x, values)) + geom_line(aes(colour = ind))
+plot(result, columns = 1:2)
 ```
 
 ```
-## Warning: Removed 126 rows containing missing values (geom_path).
+## Warning: Removed 15 rows containing missing values (geom_point).
 ```
 
-![plot of chunk visualization](figure/visualization2.png) 
+```
+## Warning: Removed 2 rows containing missing values (geom_path).
+```
+
+![plot of chunk visualization](figure/visualization.png) 
 
 
 Done!

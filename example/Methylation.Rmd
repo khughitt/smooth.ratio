@@ -47,32 +47,19 @@ head(cpgsites)
 range(cpgsites)
 ```
 
-Let's now apply our smoothing method and compare the results.
+Let's now smooth a 20kb region of the chromosome.
 ```{r smoothing}
-result = fast.smooth(cpgsites, methylation, coverage)
+indices = which((cpgsites > 830000) & (cpgsites < 850000))
+result = fast.smooth(cpgsites[indices], methylation[indices,], coverage[indices,], sigma_d=250)
 
-# down-sampled data
-head(result$small)
-
-# after interpolation back up to it's full size
-head(result$y)
+# smoothed curve
+head(result$smoothed)
 ```
 
 Finally, let's create some simple plots of our results.
 
-```{r visualization}
-library(ggplot2)
-
-# plot down-sampled data
-dat = stack(as.data.frame(result$small))
-scale_factor = (max(cpgsites) - min(cpgsites)) / nrow(result$small)
-dat$x <- rep(seq_len(nrow(result$small)), ncol(result$small)) * scale_factor
-ggplot(dat, aes(x, values)) + geom_line(aes(colour=ind))
-
-# full-size
-dat = stack(as.data.frame(result$y))
-dat$x <- rep(seq_len(nrow(result$y)), ncol(result$y))
-ggplot(dat, aes(x, values)) + geom_line(aes(colour=ind))
+```{r visualization, fig.width=10, fig.height=8, dpi=96, warning=FALSE}
+plot(result, columns=1:2)
 ```
 
 Done!
