@@ -140,7 +140,7 @@ result = fast.smooth(cpgsites[indices], methylation[indices, ], coverage[indices
     ], sigma_d = 250)
 
 # smoothed curve
-head(result$smoothed)
+head(result$fitted)
 ```
 
 ```
@@ -153,14 +153,6 @@ Finally, let's create some simple plots of our results.
 
 ```r
 plot(result, columns = 1:2)
-```
-
-```
-## Warning: Removed 15 rows containing missing values (geom_point).
-```
-
-```
-## Warning: Removed 2 rows containing missing values (geom_path).
 ```
 
 ![plot of chunk visualization](figure/visualization.png) 

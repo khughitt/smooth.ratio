@@ -3,6 +3,10 @@
 #' This file contains smoothing methods for R.
 #' 
 #' @author Keith Hughitt, based on a Matlab version written by Chengxi Ye.
+#' 
+#' @TODO: fix trailing zero issue for subset input
+#' @TODO: have SmoothedData return smoothed data vector when cast to vector.
+#' 
 library(signal)
 library(reshape2)
 library(matrixcalc)
@@ -10,28 +14,29 @@ library(ggplot2)
 
 #' Approximate bilateral smoothing
 #' 
-#' @param spatial    mx1 Spatial component of matrix to be smoothed
-#' @param intensity  mxn Intensity component of matrix to be smoothed
-#' @param confidence mxn Confidence measure for vector to be smooted
+#' @param x An mx1 vector of predictors.
+#' @param y An mxn Matrix of response variables. If more than one column is 
+#'          specified, each additional column is treated as a separate sample.
+#' @param weights    An mxn weight matrix for the above response matrix.
 #' @param sigma_d    Standard deviation for Gaussian kernel approximation
-#' @param sampling_d Factor to divide spatial range by to determine number
+#' @param sampling_d Factor to divide x range by to determine number
 #'                   of bins to use for down-sampling.
 #' @return list containing smoothed matrix along with intermediate downsampled
 #'         version of the matrix.
-fast.smooth = function(spatial, intensity, confidence, 
-                  sigma_d=max(round((max(spatial) - min(spatial)) / 1e5), 100),
-                  sampling_d=sigma_d) {
+fast.smooth = function(x, y, weights, 
+                       sigma_d=max(round((max(x) - min(x)) / 1e5), 100),
+                       sampling_d=sigma_d) {
 
     # Convert any dataframe input to matrices
-    spatial    = as.matrix(spatial)
-    intensity  = as.matrix(intensity)
-    confidence = as.matrix(confidence)
+    x = as.matrix(x)
+    y = as.matrix(y)
+    weights= as.matrix(weights)
 
     # Down-sampling parameter
     derived_sigma = sigma_d / sampling_d
 
     # Assign each row in the input data to a bin
-    xi    = round((spatial - min(spatial)) / sampling_d) + 1
+    xi    = round((x - min(x)) / sampling_d) + 1
     max_x = max(xi)
 
     # Generate kernel (Gaussian approximation)
@@ -43,8 +48,8 @@ fast.smooth = function(spatial, intensity, confidence,
     kernel = exp(-0.5 * kernel)
 
     # Down-sample data
-    numerator   = matrix(0, max_x, ncol(intensity))
-    denominator = matrix(0, max_x, ncol(confidence))
+    numerator   = matrix(0, max_x, ncol(y))
+    denominator = matrix(0, max_x, ncol(weights))
 
     # Sum data in bins
     index_start = 1
@@ -57,11 +62,11 @@ fast.smooth = function(spatial, intensity, confidence,
             indices = index_start:(index_end - 1)
             
             if (length(indices) == 1) {
-                numerator[v1,]   = intensity[indices,] 
-                denominator[v1,] = confidence[indices,]
+                numerator[v1,]   = y[indices,] 
+                denominator[v1,] = weights[indices,]
             } else {
-                numerator[v1,]   = colSums(intensity[indices,])
-                denominator[v1,] = colSums(confidence[indices,])
+                numerator[v1,]   = colSums(y[indices,])
+                denominator[v1,] = colSums(weights[indices,])
             }
             index_start = index_end
         }        
@@ -71,43 +76,42 @@ fast.smooth = function(spatial, intensity, confidence,
     indices = index_start:index_end
     
     if (length(indices) == 1) {
-        numerator[v1,]   = intensity[indices,] 
-        denominator[v1,] = confidence[indices,]
+        numerator[v1,]   = y[indices,] 
+        denominator[v1,] = weights[indices,]
     } else {
-        numerator[v1,]   = colSums(intensity[indices,])
-        denominator[v1,] = colSums(confidence[indices,])
+        numerator[v1,]   = colSums(y[indices,])
+        denominator[v1,] = colSums(weights[indices,])
     }
        
     # Cleaner but slower way of binning the data...
     #     for (i in 1:nrow(xi)) {
-    #         numerator[xi[i],]   = numerator[xi[i],] + intensity[i,]
-    #         denominator[xi[i],] = denominator[xi[i],] + confidence[i,]
+    #         numerator[xi[i],]   = numerator[xi[i],] + y[i,]
+    #         denominator[xi[i],] = denominator[xi[i],] + weights[i,]
     #     }
     
     # Instantiate matrices to hold smooth down-sampled and interpolated values
     # smoothed_signal will contain the smooth down-sampled matrix while yi
     # will be used to store the final version which has been interpolated back
     # up to its original size.
-    smoothed_signal = matrix(0, max_x, ncol(intensity))
-    yi = matrix(0, nrow(intensity), ncol(intensity))
+    smoothed = matrix(0, max_x, ncol(y))
+    yi = matrix(0, nrow(y), ncol(y))
 
-    numerator = conv_fast(numerator, kernel)
+    numerator   = conv_fast(numerator, kernel)
     denominator = conv_fast(denominator, kernel)
 
-    mask = denominator == 0
+    mask = (denominator == 0)
     numerator[mask]   = 0
     denominator[mask] = 1
 
-    smoothed_signal = numerator/denominator
+    smoothed = numerator/denominator
     
     for (col in 1:ncol(yi)) {
         # Interpolate back up to the original vector length
-        yi[,col] = interp1(1:max_x, smoothed_signal[,col], 
-                           ((spatial - min(spatial)) / sampling_d) +1)
+        yi[,col] = interp1(1:max_x, smoothed[,col], 
+                          ((x - min(x)) / sampling_d) +1)
     }
 
-    return(new("SmoothedData", spatial=spatial, intensity=intensity, 
-               confidence=confidence, smoothed=yi))
+    return(new("SmoothedData", x=x, y=y, weights=weights, fitted=yi))
 }
 
 # faster convolution
@@ -124,20 +128,20 @@ conv_fast = function(a, b) {
 #'
 #' SmoothedData class definition
 #'
-setClass('SmoothedData', representation(spatial='matrix', intensity='matrix', 
-                                        confidence='matrix', smoothed='matrix'))
+setClass('SmoothedData', representation(x='matrix', y='matrix', 
+                                        weights='matrix', fitted='matrix'))
 setMethod('plot', 'SmoothedData', function(object, x, y, 
-                                           columns=1:ncol(object@smoothed)) {
+                                           columns=1:ncol(object@fitted)) {
     # raw data
-    df1 = data.frame(x=object@spatial, 
-                     y=object@intensity[,1] / object@confidence[,1],
-                     confidence=object@confidence[,1])
+    df1 = data.frame(x=object@x, 
+                     y=object@y[,1] / object@weights[,1],
+                     weights=object@weights[,1])
     
     # smoothed curves
-    stacked = cbind(data.frame(x=object@spatial), y=object@smoothed[,columns])
+    stacked = cbind(data.frame(x=object@x), y=object@fitted[,columns])
     df2 = melt(stacked, id='x')
     
-    ggplot(df1, aes(x=x, y=y)) + geom_point(color="#5A5A5A", aes(size=confidence)) +
+    ggplot(df1, aes(x=x, y=y)) + geom_point(color="#5A5A5A", aes(size=weights)) +
         scale_size_continuous(range=c(1,7)) +
         geom_line(data=df2, aes(x=x, y=value, color=variable)) +
         xlab("CpG site (nt)") +
