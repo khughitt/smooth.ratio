@@ -4,6 +4,7 @@
 #' 
 #' @author Keith Hughitt, based on a Matlab version written by Chengxi Ye.
 library(signal)
+library(reshape2)
 library(matrixcalc)
 library(ggplot2)
 
@@ -110,18 +111,20 @@ conv_same = function(a, b) {
 #'
 setClass('SmoothedData', representation(spatial='matrix', intensity='matrix', 
                                         confidence='matrix', smoothed='matrix'))
-setMethod('plot', 'SmoothedData', function(object, x, y, n=1) {
-    # create dataframes for ggplot
+setMethod('plot', 'SmoothedData', function(object, x, y, 
+                                           columns=1:ncol(object@smoothed)) {
+    # raw data
     df1 = data.frame(x=object@spatial, 
-                     y=object@intensity[,n] / object@confidence[,n],
-                     confidence=object@confidence[,n])
+                     y=object@intensity[,1] / object@confidence[,1],
+                     confidence=object@confidence[,1])
     
-    # plot a single column
-    df2 = data.frame(x=object@spatial, y=object@smoothed[,n])
+    # smoothed curves
+    stacked = cbind(data.frame(x=object@spatial), y=object@smoothed[,columns])
+    df2 = melt(stacked, id='x')
     
     ggplot(df1, aes(x=x, y=y)) + geom_point(color="#5A5A5A", aes(size=confidence)) +
         scale_size_continuous(range=c(1,7)) +
-        geom_line(data=df2, aes(x=x, y=y), color='red') +
+        geom_line(data=df2, aes(x=x, y=value, color=variable)) +
         xlab("CpG site (nt)") +
         ylab("% Methylation") +
         ggtitle("Smooted data fit")
