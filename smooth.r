@@ -110,21 +110,19 @@ conv_same = function(a, b) {
 #'
 setClass('SmoothedData', representation(spatial='matrix', intensity='matrix', 
                                         confidence='matrix', smoothed='matrix'))
-setMethod('plot', 'SmoothedData', function(object, x, y, col) {
-    #col=1
-    indices = which((object@spatial > 830000) & (object@spatial <= 850000))
-    
+setMethod('plot', 'SmoothedData', function(object, x, y, n=1) {
     # create dataframes for ggplot
-    df1 = data.frame(x=object@spatial[indices], 
-                     y=object@intensity[indices,col] / object@confidence[indices,col])
+    df1 = data.frame(x=object@spatial, 
+                     y=object@intensity[,n] / object@confidence[,n],
+                     confidence=object@confidence[,n])
     
-    # first column
-    df2 = data.frame(x=object@spatial[indices], y=object@smoothed[indices,col])
+    # plot a single column
+    df2 = data.frame(x=object@spatial, y=object@smoothed[,n])
     
-    ggplot(df1, aes(x=x, y=y)) + geom_point(color="#5A5A5A") +
+    ggplot(df1, aes(x=x, y=y)) + geom_point(color="#5A5A5A", aes(size=confidence)) +
+        scale_size_continuous(range=c(1,7)) +
         geom_line(data=df2, aes(x=x, y=y), color='red') +
         xlab("CpG site (nt)") +
         ylab("% Methylation") +
         ggtitle("Smooted data fit")
-    #ggsave('output_sample1.png', width=12, height=9, dpi=96)
 })
