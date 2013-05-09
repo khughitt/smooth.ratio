@@ -4,6 +4,7 @@
 #' 
 #' @author Keith Hughitt, based on a Matlab version written by Chengxi Ye.
 library(signal)
+library(matrixcalc)
 library(ggplot2)
 
 #' Approximate bilateral smoothing
@@ -20,8 +21,6 @@ fast.smooth = function(spatial, intensity, confidence,
                        sigma_d=(max(spatial) - min(spatial)) / 1000,
                        sampling_d=sigma_d) {
 
-    t0 = Sys.time()
-    
     # Convert any dataframe input to matrices
     spatial    = as.matrix(spatial)
     intensity  = as.matrix(intensity)
@@ -30,16 +29,10 @@ fast.smooth = function(spatial, intensity, confidence,
     # Down-sampling parameter
     derived_sigma = sigma_d / sampling_d
     
-    t1 = Sys.time()
-    print(sprintf("t1: %f", t1-t0))
-    
     # Bin data for down-sampling
     xi    = round((spatial - min(spatial)) / sampling_d) + 1
     max_x = max(xi)
     
-    t2 = Sys.time()
-    print(sprintf("t2: %f", t2-t1))
-
     # Generate kernel (Gaussian approximation)
     kernel_width = 2 * derived_sigma + 1
 
@@ -51,23 +44,13 @@ fast.smooth = function(spatial, intensity, confidence,
     # Down-sample data
     numerator   = matrix(0, max_x, ncol(intensity))
     denominator = matrix(0, max_x, ncol(confidence))
-    
-    t3 = Sys.time()
-    print(sprintf("t3: %f", t3-t2))
 
-    # @TODO: Would it be possible to collapse repeats in xi to pairs of 
-    # coefficients to use in below calculation?
+    # Sum data in bins
     for (i in 1:nrow(xi)) {
         numerator[xi[i],]   = numerator[xi[i],] + intensity[i,]
         denominator[xi[i],] = denominator[xi[i],] + confidence[i,]
     }
     
-    t4 = Sys.time()
-    print(sprintf("t4: %f", t4-t3))
-
-    #numerator = aggregate(intensity, list(xi[[1]]), "sum")
-    #denominator = aggregate(confidence, list(xi[[1]]), "sum")
-
     # Instantiate matrices to hold smooth down-sampled and interpolated values
     # smoothed_signal will contain the smooth down-sampled matrix while yi
     # will be used to store the final version which has been interpolated back
@@ -75,37 +58,34 @@ fast.smooth = function(spatial, intensity, confidence,
     smoothed_signal = matrix(0, max_x, ncol(intensity))
     yi = matrix(0, nrow(intensity), ncol(intensity))
 
-    # Iterate through samples and convolve down-sampled data
-    for (col in 1:ncol(intensity)) {
-        # Perform convolution
-        numerator[,col]   = conv_same(numerator[,col], kernel)
-        denominator[,col] = conv_same(denominator[,col], kernel)
+    numerator = conv_fast(numerator, kernel)
+    denominator = conv_fast(denominator, kernel)
 
-        # Work-around 2013/04/29
-        # conv currently has a bug relating to precision when convolving over a
-        # range of zeros. As a temporary work-around, any values very close to 0
-        # will be set to 0.
-        numerator[,col][numerator[,col] <= 1E-10] = 0
-        denominator[,col][denominator[,col] <= 1E-10] = 1
+    mask = denominator == 0
+    numerator[mask]   = 0
+    denominator[mask] = 1
 
-        mask = which(denominator[,col] == 0)
-        
-        numerator[mask,col]   = 0
-        denominator[mask,col] = 1
-        
-        # Scale the smoothed result by the smoothed confidence vector
-        smoothed_signal[,col] = numerator[,col] / denominator[,col]
-
-        # interpolate back up to the original vector length
+    smoothed_signal = numerator/denominator
+    
+    for (col in 1:ncol(yi)) {
+        # Interpolate back up to the original vector length
         yi[,col] = interp1(1:max_x, smoothed_signal[,col], 
                            ((spatial - min(spatial)) / sampling_d) +1)
     }
-    
-    t5 = Sys.time()
-    print(sprintf("t5: %f", t5-t4))
 
-    #return(list(y=yi, small=smoothed_signal))
-    return(new("SmoothedData", spatial=spatial, intensity=intensity, confidence=confidence, smoothed=yi))
+    return(new("SmoothedData", spatial=spatial, intensity=intensity, 
+               confidence=confidence, smoothed=yi))
+}
+
+# faster convolution
+# a = mxn matrix
+# b = 1x3 column vector
+# LIMITATION: sampling_d must equal sigma_d, otherwise kernel_width != 3
+conv_fast = function(a, b) {
+    x1 = b[2] * a
+    x2 = b[1] * shift.up(a, 1)
+    x3 = b[3] * shift.down(a, 1)
+    return(x1 + x2 + x3)
 }
 
 #' Centered convolution
