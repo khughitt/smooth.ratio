@@ -19,21 +19,21 @@ library(ggplot2)
 #' @return list containing smoothed matrix along with intermediate downsampled
 #'         version of the matrix.
 fast.smooth = function(spatial, intensity, confidence, 
-                       sigma_d=(max(spatial) - min(spatial)) / 1000,
-                       sampling_d=sigma_d) {
+                  sigma_d=max(round((max(spatial) - min(spatial)) / 1e5), 100),
+                  sampling_d=sigma_d) {
 
     # Convert any dataframe input to matrices
     spatial    = as.matrix(spatial)
     intensity  = as.matrix(intensity)
     confidence = as.matrix(confidence)
-    
+
     # Down-sampling parameter
     derived_sigma = sigma_d / sampling_d
-    
-    # Bin data for down-sampling
+
+    # Assign each row in the input data to a bin
     xi    = round((spatial - min(spatial)) / sampling_d) + 1
     max_x = max(xi)
-    
+
     # Generate kernel (Gaussian approximation)
     kernel_width = 2 * derived_sigma + 1
 
@@ -47,10 +47,42 @@ fast.smooth = function(spatial, intensity, confidence,
     denominator = matrix(0, max_x, ncol(confidence))
 
     # Sum data in bins
-    for (i in 1:nrow(xi)) {
-        numerator[xi[i],]   = numerator[xi[i],] + intensity[i,]
-        denominator[xi[i],] = denominator[xi[i],] + confidence[i,]
+    index_start = 1
+
+    for (index_end in 1:nrow(xi)) {
+        v1 = xi[index_start] 
+        v2 = xi[index_end]
+        
+        if (v1 != v2) {
+            indices = index_start:(index_end - 1)
+            
+            if (length(indices) == 1) {
+                numerator[v1,]   = intensity[indices,] 
+                denominator[v1,] = confidence[indices,]
+            } else {
+                numerator[v1,]   = colSums(intensity[indices,])
+                denominator[v1,] = colSums(confidence[indices,])
+            }
+            index_start = index_end
+        }        
     }
+    
+    # last row
+    indices = index_start:index_end
+    
+    if (length(indices) == 1) {
+        numerator[v1,]   = intensity[indices,] 
+        denominator[v1,] = confidence[indices,]
+    } else {
+        numerator[v1,]   = colSums(intensity[indices,])
+        denominator[v1,] = colSums(confidence[indices,])
+    }
+       
+    # Cleaner but slower way of binning the data...
+    #     for (i in 1:nrow(xi)) {
+    #         numerator[xi[i],]   = numerator[xi[i],] + intensity[i,]
+    #         denominator[xi[i],] = denominator[xi[i],] + confidence[i,]
+    #     }
     
     # Instantiate matrices to hold smooth down-sampled and interpolated values
     # smoothed_signal will contain the smooth down-sampled matrix while yi
