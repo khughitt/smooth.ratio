@@ -31,7 +31,7 @@ Analysis
 --------
 First let's load sample data and take a look at what we have:
 ```{r data_prep, message=FALSE}
-source('../smooth.r')
+source('../R/smooth.r')
 load(file='../data/sample.rda')
 
 # Methylation reads at each site
