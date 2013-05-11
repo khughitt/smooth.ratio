@@ -4,6 +4,11 @@ Description:
 URL: http://www.github.com/khughitt/csmooth
 Version: 0.1.0
 Author: Keith Hughitt <khughitt@umd.edu>
+Authors@R: c(person("Keith Hughitt", "Developer", role=c("aut", "cre"),
+                    email="khughitt@umd.edu"),
+             person("Chengxi Ye", "Developer", role="aut"),
+             person("Mahfuza Sharmin", "Developer", role="aut"),
+             person("Khoa Trinh", "Developer", role="aut"))
 Maintainer: Keith Hughitt <khughitt@umd.edu>
 License: BSD
 Imports: ggplot2, matrixcalc, reshape2, signal
