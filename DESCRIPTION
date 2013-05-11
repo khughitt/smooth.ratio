@@ -1,0 +1,9 @@
+Package: slick
+Title: Fast smoothing methods for R.
+Description:
+URL: http://www.github.com/khughitt/csmooth
+Version: 0.1.0
+Author: Keith Hughitt <khughitt@umd.edu>
+Maintainer: Keith Hughitt <khughitt@umd.edu>
+License: BSD
+Imports: ggplot2, matrixcalc, reshape2, signal
