@@ -12,3 +12,4 @@ Authors@R: c(person("Keith Hughitt", "Developer", role=c("aut", "cre"),
 Maintainer: Keith Hughitt <khughitt@umd.edu>
 License: BSD
 Imports: ggplot2, matrixcalc, reshape2, signal
+Suggests: locfit

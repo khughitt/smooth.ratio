@@ -64,6 +64,9 @@ fast.smooth = function(x, y, weights,
             if (length(indices) == 1) {
                 numerator[v1,]   = y[indices,] 
                 denominator[v1,] = weights[indices,]
+            } else if (ncol(y) == 1) {
+                numerator[v1,]   = sum(y[indices,])
+                denominator[v1,] = sum(weights[indices,])
             } else {
                 numerator[v1,]   = colSums(y[indices,])
                 denominator[v1,] = colSums(weights[indices,])
@@ -78,6 +81,9 @@ fast.smooth = function(x, y, weights,
     if (length(indices) == 1) {
         numerator[v1,]   = y[indices,] 
         denominator[v1,] = weights[indices,]
+    } else if (ncol(y) == 1) {
+        numerator[v1,]   = sum(y[indices,])
+        denominator[v1,] = sum(weights[indices,])
     } else {
         numerator[v1,]   = colSums(y[indices,])
         denominator[v1,] = colSums(weights[indices,])
@@ -120,8 +126,13 @@ fast.smooth = function(x, y, weights,
 # LIMITATION: sampling_d must equal sigma_d, otherwise kernel_width != 3
 conv_fast = function(a, b) {
     x1 = b[2] * a
-    x2 = b[1] * shift.up(a, 1)
-    x3 = b[3] * shift.down(a, 1)
+    if (ncol(a) != 1) {
+        x2 = b[1] * shift.up(a, 1)
+        x3 = b[3] * shift.down(a, 1)
+    } else {
+        x2 = b[1] * matrix(c(a[2:length(a)], 0))
+        x3 = b[3] * matrix(c(0, a[1:(length(a) -1)]))
+    }
     return(x1 + x2 + x3)
 }
 
@@ -131,7 +142,8 @@ conv_fast = function(a, b) {
 setClass('SmoothedData', representation(x='matrix', y='matrix', 
                                         weights='matrix', fitted='matrix'))
 setMethod('plot', 'SmoothedData', function(object, x, y, 
-                                           columns=1:ncol(object@fitted)) {
+                                           columns=1:ncol(object@fitted),
+                                           locfit=FALSE) {
     # raw data
     df1 = data.frame(x=object@x, 
                      y=object@y[,1] / object@weights[,1],
@@ -141,9 +153,20 @@ setMethod('plot', 'SmoothedData', function(object, x, y,
     stacked = cbind(data.frame(x=object@x), y=object@fitted[,columns])
     df2 = melt(stacked, id='x')
     
+    # optional comparison with locfit
+    if (locfit == TRUE) {
+        library(locfit)
+        locplt = stat_smooth(method='locfit', data=df1, formula=y~lp(x, nn=0.08))
+    } else {
+        locplt = NULL
+    }
+    
+    # construct plot
     ggplot(df1, aes(x=x, y=y)) + geom_point(color="#5A5A5A", aes(size=weights)) +
         scale_size_continuous(range=c(1,7)) +
         geom_line(data=df2, aes(x=x, y=value, color=variable)) +
+        locplt + 
+        ylim(0, 1) +
         xlab("CpG site (nt)") +
         ylab("% Methylation") +
         ggtitle("Smooted data fit")
