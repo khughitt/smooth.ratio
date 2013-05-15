@@ -2,17 +2,18 @@
 #' 
 #' This file contains smoothing methods for R.
 #' 
-#' @author Keith Hughitt, based on a Matlab version written by Chengxi Ye.
-#' 
 #' @TODO: fix trailing zero issue for subset input
 #' @TODO: have SmoothedData return smoothed data vector when cast to vector.
 #' 
-library(signal)
-library(reshape2)
-library(matrixcalc)
 library(ggplot2)
+library(matrixcalc)
+library(reshape2)
+library(signal)
+library(Rcpp)
 
 #' Approximate bilateral smoothing
+#' 
+#' @author Keith Hughitt, based on a Matlab version written by Chengxi Ye.
 #' 
 #' @param x An mx1 vector of predictors.
 #' @param y An mxn Matrix of response variables. If more than one column is 
@@ -21,8 +22,8 @@ library(ggplot2)
 #' @param sigma_d    Standard deviation for Gaussian kernel approximation
 #' @param sampling_d Factor to divide x range by to determine number
 #'                   of bins to use for down-sampling.
-#' @return list containing smoothed matrix along with intermediate downsampled
-#'         version of the matrix.
+#' @return SmoothedData instance
+#' 
 fast.smooth = function(x, y, weights, 
                        sigma_d=max(round((max(x) - min(x)) / 1e5), 100),
                        sampling_d=sigma_d) {
@@ -30,7 +31,7 @@ fast.smooth = function(x, y, weights,
     # Convert any dataframe input to matrices
     x = as.matrix(x)
     y = as.matrix(y)
-    weights= as.matrix(weights)
+    weights = as.matrix(weights)
 
     # Down-sampling parameter
     derived_sigma = sigma_d / sampling_d
@@ -118,6 +119,47 @@ fast.smooth = function(x, y, weights,
     }
 
     return(new("SmoothedData", x=x, y=y, weights=weights, fitted=yi))
+}
+
+#' <TITLE>
+#' 
+#' <DESCRIPTION>
+#' 
+#' @author Mahfuza Sharmin, based on a C++ version written by Khoa Trinh.
+#' 
+#' @param x An mx1 vector of predictors.
+#' @param y An mxn Matrix of response variables. If more than one column is 
+#'          specified, each additional column is treated as a separate sample.
+#' @param weights    An mxn weight matrix for the above response matrix.
+#' @param window     ...
+#' @param a          ...
+#' @param b          ...
+#' 
+#' @return SmoothedData instance
+#' 
+fast.smooth2 = function(x, y, weights, window=70, a=0.5, b=0.5) {
+    # Load C++ code
+    sourceCpp("../src/smooth.cpp")
+
+    # Convert any dataframe input to matrices
+    x       = as.matrix(x)
+    y       = as.matrix(y)
+    weights = as.matrix(weights)
+    
+    d_weights = weights
+    d_weights[which(d_weights == 0)] = 1
+    
+    # Pre-procesing
+    M = apply(x, 2, cumsum)
+    C = apply(weights, 2, cumsum)
+    S = apply(y / d_weights, 2, cumsum)
+
+    max_weights = apply(weights, 2, max)
+
+    smoothed_data = smoothing(window, a, b, d_weights, max_weights, 
+                              x, y, weights, M, C, S)
+    
+    return(new("SmoothedData", x=x, y=y, indices = which((cpgsites > 830000) & (cpgsites < 850000))weights=weights, fitted=smoothed_data))
 }
 
 # faster convolution
