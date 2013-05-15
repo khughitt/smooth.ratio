@@ -159,7 +159,7 @@ fast.smooth2 = function(x, y, weights, window=70, a=0.5, b=0.5) {
     smoothed_data = smoothing(window, a, b, d_weights, max_weights, 
                               x, y, weights, M, C, S)
     
-    return(new("SmoothedData", x=x, y=y, indices = which((cpgsites > 830000) & (cpgsites < 850000))weights=weights, fitted=smoothed_data))
+    return(new("SmoothedData", x=x, y=y, weights=weights, fitted=smoothed_data))
 }
 
 # faster convolution
