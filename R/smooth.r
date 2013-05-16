@@ -185,7 +185,8 @@ setClass('SmoothedData', representation(x='matrix', y='matrix',
                                         weights='matrix', fitted='matrix'))
 setMethod('plot', 'SmoothedData', function(object, x, y, 
                                            columns=1:ncol(object@fitted),
-                                           locfit=FALSE) {
+                                           locfit=FALSE,
+                                           title='Smoothed data fit') {
     # raw data
     df1 = data.frame(x=object@x, 
                      y=object@y[,1] / object@weights[,1],
@@ -211,5 +212,5 @@ setMethod('plot', 'SmoothedData', function(object, x, y,
         ylim(0, 1) +
         xlab("CpG site (nt)") +
         ylab("% Methylation") +
-        ggtitle("Smooted data fit")
+        ggtitle(title)
 })
