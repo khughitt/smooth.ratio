@@ -154,7 +154,7 @@ smooth.ratio2 = function(x, y, weights, window=70, a=0.5, b=0.5) {
     d_weights[which(d_weights == 0)] = 1
     
     # Pre-procesing
-    M = apply(x, 2, cumsum)
+    M = apply(y, 2, cumsum)
     C = apply(weights, 2, cumsum)
     S = apply(y / d_weights, 2, cumsum)
 

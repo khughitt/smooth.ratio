@@ -1,13 +1,10 @@
-/**
- * Author: Khoa Trinh <ttdangkhoa@gmail.com>
- */
 #include <Rcpp.h>
 using namespace Rcpp;
 
 // [[Rcpp::export]]
 NumericVector smoothing(int window, double a, double b, NumericMatrix d_coverage, NumericVector maxCoverage,
                             NumericVector cpgsites, NumericMatrix methylation, NumericMatrix coverage,
-                            NumericVector M, NumericMatrix C, NumericMatrix S) {
+                            NumericMatrix M, NumericMatrix C, NumericMatrix S) {
     int n = cpgsites.size();
     int num_samples = methylation.ncol();
     NumericMatrix smoothed_data(n, num_samples);
@@ -35,7 +32,7 @@ NumericVector smoothing(int window, double a, double b, NumericMatrix d_coverage
           
         double denominator = a*S_c/maxCoverage[j] + (b/D)*((right-left+1)*D - (L_denominator+R_denominator));
         
-        double numerator = (a/maxCoverage[j]) * (M[right] - M[left] + methylation(left,j))
+        double numerator = (a/maxCoverage[j]) * (M(right,j) - M(left,j) + methylation(left,j))
                             + b * (S(right,j) - S(left,j) + 1.0*methylation(left,j)/d_coverage(left,j))
                             - (b / D) * (L_numerator + R_numerator);
           
