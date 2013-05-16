@@ -50,7 +50,7 @@ range(cpgsites)
 Let's now smooth a 20kb region of the chromosome.
 ```{r smoothing}
 indices = which((cpgsites > 830000) & (cpgsites < 850000))
-result = fast.smooth(cpgsites[indices], methylation[indices,], coverage[indices,], sigma_d=250)
+result = smooth.ratio(cpgsites[indices], methylation[indices,], coverage[indices,], sigma_d=250)
 
 # smoothed curve
 head(result$fitted)

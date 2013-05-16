@@ -24,9 +24,13 @@ library(Rcpp)
 #'                   of bins to use for down-sampling.
 #' @return SmoothedData instance
 #' 
-fast.smooth = function(x, y, weights, 
-                       sigma_d=max(round((max(x) - min(x)) / 1e5), 100),
-                       sampling_d=sigma_d) {
+smooth.ratio = function(x, y, weights, 
+                        sigma_d=max(round((max(x) - min(x)) / 1e5), 100)) {
+    
+    # Sampling window
+    # 2013/05/16: hard-coding until convolution can be generalized
+    # to alternative sizes.
+    sampling_d=sigma_d
 
     # Convert any dataframe input to matrices
     x = as.matrix(x)
@@ -137,7 +141,7 @@ fast.smooth = function(x, y, weights,
 #' 
 #' @return SmoothedData instance
 #' 
-fast.smooth2 = function(x, y, weights, window=70, a=0.5, b=0.5) {
+smooth.ratio2 = function(x, y, weights, window=70, a=0.5, b=0.5) {
     # Load C++ code
     sourceCpp("../src/smooth.cpp")
 
