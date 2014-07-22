@@ -1,6 +1,10 @@
 smooth.ratio
 ============
 
+Window Size Independent Linear Time Smoothing for Biological Count Data
+
+**Note**: This software was developed as part of a group project for a graduate level course at the University of Maryland, College Park ([CMSC 702](http://cbcb.umd.edu/~hcorrada/CFG/)). The software was never formally published or peer-reviewed, so please use at your own risk.
+
 Installation
 ============
 
@@ -146,7 +150,7 @@ Finally, let's create some simple plots of our results.
 plot(result, columns=1:2)
 ```
 
-![plot of chunk visualization](./README_files/figure-markdown_github/visualization.png)
+![plot of chunk visualization](README_files/figure-markdown_github/visualization.png)
 
 Done!
 
