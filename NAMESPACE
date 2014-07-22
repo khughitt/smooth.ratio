@@ -1,3 +1,4 @@
 export(smooth.ratio)
+exportMethods(plot)
 useDynLib(smoothratio)
 importFrom(Rcpp, sourceCpp)

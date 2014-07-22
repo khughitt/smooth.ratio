@@ -64,7 +64,7 @@ indices = which((cpgsites > 830000) & (cpgsites < 850000))
 result = smooth.ratio(cpgsites[indices], methylation[indices,], coverage[indices,], sigma_d=250)
 
 # smoothed curve
-head(result$fitted)
+head(result@fitted)
 ```
 
 Finally, let's create some simple plots of our results.

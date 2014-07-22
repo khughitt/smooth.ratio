@@ -139,7 +139,6 @@ smooth.ratio = function(x, y, weights,
 #'
 smooth.ratio2 = function(x, y, weights, window=70, a=0.5, b=0.5) {
     require(Rcpp)
-    require(ggplot2)
 
     # Load C++ code
     sourceCpp("../src/smooth.cpp")
@@ -192,6 +191,7 @@ setMethod('plot', 'SmoothedData', function(object, x, y,
                                            columns=1:ncol(object@fitted),
                                            locfit=FALSE,
                                            title='Smoothed data fit') {
+    require(ggplot2)
     require(reshape2)
 
     # raw data
