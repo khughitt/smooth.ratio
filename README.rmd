@@ -1,10 +1,18 @@
 smooth.ratio
 ============
 
-...
+Installation
+============
 
-Whole Genome Bisulfite Sequencing
-=================================
+You can use devtools to install `smooth.ratio` directly from Github:
+
+```{r install_example, eval=FALSE}
+library(devtools)
+install_github('khughitt/smooth.ratio')
+```
+
+Usage Example: Whole Genome Bisulfite Sequencing
+================================================
 
 Overview
 --------
@@ -34,7 +42,7 @@ Analysis
 --------
 First let's load sample data and take a look at what we have:
 ```{r data_prep, message=FALSE}
-source('R/smooth.r')
+library(smoothratio)
 load(file='data/sample.rda')
 
 # Methylation reads at each site

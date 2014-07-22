@@ -11,7 +11,11 @@ Authors@R: c(person("Keith Hughitt", "Developer", role=c("aut", "cre"),
              person("Khoa Trinh", "Developer", role="aut"))
 Maintainer: Keith Hughitt <khughitt@umd.edu>
 License: BSD
-Imports: ggplot2, matrixcalc, reshape2, signal
 LinkingTo: Rcpp
-Imports: Rcpp
+Imports:
+    ggplot2,
+    matrixcalc,
+    reshape2,
+    signal,
+    Rcpp
 Suggests: locfit
