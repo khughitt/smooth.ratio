@@ -150,7 +150,8 @@ Finally, let's create some simple plots of our results.
 plot(result, columns=1:2)
 ```
 
-![plot of chunk visualization](README_files/figure-markdown_github/visualization.png)
+![plot of chunk
+visualization](https://raw.githubusercontent.com/khughitt/smooth.ratio/master/README_files/figure-markdown_github/visualization.png)
 
 Done!
 
