@@ -1,1 +1,3 @@
 export(smooth.ratio)
+useDynLib(mypackage)
+importFrom(Rcpp, sourceCpp)
