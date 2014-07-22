@@ -1,10 +1,10 @@
 #' Fast smoothing functions for R
-#' 
+#'
 #' This file contains smoothing methods for R.
-#' 
+#'
 #' @TODO: fix trailing zero issue for subset input
 #' @TODO: have SmoothedData return smoothed data vector when cast to vector.
-#' 
+#'
 library(ggplot2)
 library(matrixcalc)
 library(reshape2)
@@ -12,21 +12,21 @@ library(signal)
 library(Rcpp)
 
 #' Approximate bilateral smoothing
-#' 
+#'
 #' @author Keith Hughitt, based on a Matlab version written by Chengxi Ye.
-#' 
+#'
 #' @param x An mx1 vector of predictors.
-#' @param y An mxn Matrix of response variables. If more than one column is 
+#' @param y An mxn Matrix of response variables. If more than one column is
 #'          specified, each additional column is treated as a separate sample.
 #' @param weights    An mxn weight matrix for the above response matrix.
 #' @param sigma_d    Standard deviation for Gaussian kernel approximation
 #' @param sampling_d Factor to divide x range by to determine number
 #'                   of bins to use for down-sampling.
 #' @return SmoothedData instance
-#' 
-smooth.ratio = function(x, y, weights, 
+#'
+smooth.ratio = function(x, y, weights,
                         sigma_d=max(round((max(x) - min(x)) / 1e5), 100)) {
-    
+
     # Sampling window
     # 2013/05/16: hard-coding until convolution can be generalized
     # to alternative sizes.
@@ -60,14 +60,14 @@ smooth.ratio = function(x, y, weights,
     index_start = 1
 
     for (index_end in 1:nrow(xi)) {
-        v1 = xi[index_start] 
+        v1 = xi[index_start]
         v2 = xi[index_end]
-        
+
         if (v1 != v2) {
             indices = index_start:(index_end - 1)
-            
+
             if (length(indices) == 1) {
-                numerator[v1,]   = y[indices,] 
+                numerator[v1,]   = y[indices,]
                 denominator[v1,] = weights[indices,]
             } else if (ncol(y) == 1) {
                 numerator[v1,]   = sum(y[indices,])
@@ -77,14 +77,14 @@ smooth.ratio = function(x, y, weights,
                 denominator[v1,] = colSums(weights[indices,])
             }
             index_start = index_end
-        }        
+        }
     }
-    
+
     # last row
     indices = index_start:index_end
-    
+
     if (length(indices) == 1) {
-        numerator[v1,]   = y[indices,] 
+        numerator[v1,]   = y[indices,]
         denominator[v1,] = weights[indices,]
     } else if (ncol(y) == 1) {
         numerator[v1,]   = sum(y[indices,])
@@ -93,13 +93,13 @@ smooth.ratio = function(x, y, weights,
         numerator[v1,]   = colSums(y[indices,])
         denominator[v1,] = colSums(weights[indices,])
     }
-       
+
     # Cleaner but slower way of binning the data...
     #     for (i in 1:nrow(xi)) {
     #         numerator[xi[i],]   = numerator[xi[i],] + y[i,]
     #         denominator[xi[i],] = denominator[xi[i],] + weights[i,]
     #     }
-    
+
     # Instantiate matrices to hold smooth down-sampled and interpolated values
     # smoothed_signal will contain the smooth down-sampled matrix while yi
     # will be used to store the final version which has been interpolated back
@@ -115,10 +115,10 @@ smooth.ratio = function(x, y, weights,
     denominator[mask] = 1
 
     smoothed = numerator/denominator
-    
+
     for (col in 1:ncol(yi)) {
         # Interpolate back up to the original vector length
-        yi[,col] = interp1(1:max_x, smoothed[,col], 
+        yi[,col] = interp1(1:max_x, smoothed[,col],
                           ((x - min(x)) / sampling_d) +1)
     }
 
@@ -126,21 +126,21 @@ smooth.ratio = function(x, y, weights,
 }
 
 #' <TITLE>
-#' 
+#'
 #' <DESCRIPTION>
-#' 
+#'
 #' @author Mahfuza Sharmin, based on a C++ version written by Khoa Trinh.
-#' 
+#'
 #' @param x An mx1 vector of predictors.
-#' @param y An mxn Matrix of response variables. If more than one column is 
+#' @param y An mxn Matrix of response variables. If more than one column is
 #'          specified, each additional column is treated as a separate sample.
 #' @param weights    An mxn weight matrix for the above response matrix.
 #' @param window     ...
 #' @param a          ...
 #' @param b          ...
-#' 
+#'
 #' @return SmoothedData instance
-#' 
+#'
 smooth.ratio2 = function(x, y, weights, window=70, a=0.5, b=0.5) {
     # Load C++ code
     sourceCpp("../src/smooth.cpp")
@@ -149,10 +149,10 @@ smooth.ratio2 = function(x, y, weights, window=70, a=0.5, b=0.5) {
     x       = as.matrix(x)
     y       = as.matrix(y)
     weights = as.matrix(weights)
-    
+
     d_weights = weights
     d_weights[which(d_weights == 0)] = 1
-    
+
     # Pre-procesing
     M = apply(y, 2, cumsum)
     C = apply(weights, 2, cumsum)
@@ -160,9 +160,9 @@ smooth.ratio2 = function(x, y, weights, window=70, a=0.5, b=0.5) {
 
     max_weights = apply(weights, 2, max)
 
-    smoothed_data = smoothing(window, a, b, d_weights, max_weights, 
+    smoothed_data = smoothing(window, a, b, d_weights, max_weights,
                               x, y, weights, M, C, S)
-    
+
     return(new("SmoothedData", x=x, y=y, weights=weights, fitted=smoothed_data))
 }
 
@@ -185,21 +185,21 @@ conv_fast = function(a, b) {
 #'
 #' SmoothedData class definition
 #'
-setClass('SmoothedData', representation(x='matrix', y='matrix', 
+setClass('SmoothedData', representation(x='matrix', y='matrix',
                                         weights='matrix', fitted='matrix'))
-setMethod('plot', 'SmoothedData', function(object, x, y, 
+setMethod('plot', 'SmoothedData', function(object, x, y,
                                            columns=1:ncol(object@fitted),
                                            locfit=FALSE,
                                            title='Smoothed data fit') {
     # raw data
-    df1 = data.frame(x=object@x, 
+    df1 = data.frame(x=object@x,
                      y=object@y[,1] / object@weights[,1],
                      weights=object@weights[,1])
-    
+
     # smoothed curves
     stacked = cbind(data.frame(x=object@x), y=object@fitted[,columns])
     df2 = melt(stacked, id='x')
-    
+
     # optional comparison with locfit
     if (locfit == TRUE) {
         library(locfit)
@@ -207,12 +207,12 @@ setMethod('plot', 'SmoothedData', function(object, x, y,
     } else {
         locplt = NULL
     }
-    
+
     # construct plot
     ggplot(df1, aes(x=x, y=y)) + geom_point(color="#5A5A5A", aes(size=weights)) +
         scale_size_continuous(range=c(1,7)) +
         geom_line(data=df2, aes(x=x, y=value, color=variable)) +
-        locplt + 
+        locplt +
         ylim(0, 1) +
         xlab("CpG site (nt)") +
         ylab("% Methylation") +
