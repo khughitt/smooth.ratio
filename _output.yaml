@@ -1,0 +1,5 @@
+knitrBootstrap::bootstrap_document:
+    title: "smooth.ratio"
+    theme: flatly
+md_document:
+    variant: "markdown_github"
