@@ -5,11 +5,6 @@
 #' @TODO: fix trailing zero issue for subset input
 #' @TODO: have SmoothedData return smoothed data vector when cast to vector.
 #'
-library(ggplot2)
-library(matrixcalc)
-library(reshape2)
-library(signal)
-library(Rcpp)
 
 #' Approximate bilateral smoothing
 #'
@@ -26,6 +21,7 @@ library(Rcpp)
 #'
 smooth.ratio = function(x, y, weights,
                         sigma_d=max(round((max(x) - min(x)) / 1e5), 100)) {
+    require(signal)
 
     # Sampling window
     # 2013/05/16: hard-coding until convolution can be generalized
@@ -142,6 +138,9 @@ smooth.ratio = function(x, y, weights,
 #' @return SmoothedData instance
 #'
 smooth.ratio2 = function(x, y, weights, window=70, a=0.5, b=0.5) {
+    require(Rcpp)
+    require(ggplot2)
+
     # Load C++ code
     sourceCpp("../src/smooth.cpp")
 
@@ -171,6 +170,8 @@ smooth.ratio2 = function(x, y, weights, window=70, a=0.5, b=0.5) {
 # b = 1x3 column vector
 # LIMITATION: sampling_d must equal sigma_d, otherwise kernel_width != 3
 conv_fast = function(a, b) {
+    require(matrixcalc)
+
     x1 = b[2] * a
     if (ncol(a) != 1) {
         x2 = b[1] * shift.up(a, 1)
@@ -191,6 +192,8 @@ setMethod('plot', 'SmoothedData', function(object, x, y,
                                            columns=1:ncol(object@fitted),
                                            locfit=FALSE,
                                            title='Smoothed data fit') {
+    require(reshape2)
+
     # raw data
     df1 = data.frame(x=object@x,
                      y=object@y[,1] / object@weights[,1],
@@ -202,7 +205,7 @@ setMethod('plot', 'SmoothedData', function(object, x, y,
 
     # optional comparison with locfit
     if (locfit == TRUE) {
-        library(locfit)
+        require(locfit)
         locplt = stat_smooth(method='locfit', data=df1, formula=y~lp(x, nn=0.08))
     } else {
         locplt = NULL
